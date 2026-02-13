@@ -13,6 +13,7 @@ import PIL.Image
 import json
 import torch
 import dnnlib
+from .custom_dataset import FeatureSubsampledDataset
 
 try:
     import pyspng
@@ -232,5 +233,48 @@ class ImageFolderDataset(Dataset):
         labels = np.array(labels)
         labels = labels.astype({1: np.int64, 2: np.float32}[labels.ndim])
         return labels
+
+# added function
+
+def get_dataset(
+    path,
+    resolution,
+    file_ext='png',
+    use_subsampling=False,
+    subsamples_per_sample=0,
+    features_per_subsample=0,
+    subsample_method='one_sample',
+    **kwargs
+):
+    """
+    Get appropriate dataset based on file type and subsampling settings.
+    
+    Args:
+        path: Path to data directory
+        resolution: Image resolution
+        file_ext: File extension ('csv', 'png', etc.)
+        use_subsampling: Whether to use feature subsampling
+        subsamples_per_sample: Number of subsamples per file
+        features_per_subsample: Number of features per subsample
+        subsample_method: 'one_sample' or 'two_sample'
+    """
+    if use_subsampling or file_ext == 'csv':
+        # Use our custom dataset with subsampling
+        return FeatureSubsampledDataset(
+            path=path,
+            file_ext=file_ext,
+            resolution=resolution,
+            subsamples_per_sample=subsamples_per_sample,
+            features_per_subsample=features_per_subsample,
+            method=subsample_method,
+            **kwargs
+        )
+    else:
+        # Use original StyleGAN dataset
+        return ImageFolderDataset(
+            path=path,
+            resolution=resolution,
+            **kwargs
+        )
 
 #----------------------------------------------------------------------------
