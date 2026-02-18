@@ -21,7 +21,7 @@ class FeatureSubsampledDataset(torch.utils.data.Dataset):
         self,
         path: str,
         file_ext: str = "csv",
-        resolution: int = 64,
+        resolution: int = 64, # GH: Set to None by default in StyleGAN -- should we change?
         subsamples_per_sample: int = 0,
         features_per_subsample: int = 0,
         method: str = "one_sample",
@@ -36,6 +36,11 @@ class FeatureSubsampledDataset(torch.utils.data.Dataset):
             features_per_subsample: Number of features/channels to keep per subsample
             method: 'one_sample' or 'two_sample'
         """
+
+        print("GH: HELLO")
+
+        # GH: Missing some other attributes present in the default StyleGAN Dataset class
+
         self._path = path
         self._file_ext = file_ext
         self._resolution = resolution
