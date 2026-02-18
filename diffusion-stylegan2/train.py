@@ -115,7 +115,8 @@ def setup_training_loop_kwargs(
 
     assert data is not None
     assert isinstance(data, str)
-    # GH old version: args.training_set_kwargs = dnnlib.EasyDict(class_name='training.dataset.ImageFolderDataset', path=data, use_labels=True, max_size=None, xflip=False)
+    # GH old version:
+    # args.training_set_kwargs = dnnlib.EasyDict(class_name='training.dataset.ImageFolderDataset', path=data, use_labels=True, max_size=None, xflip=False)
     # GH: Use Leilani's new class:
     args.training_set_kwargs = dnnlib.EasyDict(class_name='training.dataset.FeatureSubsampledDataset', path=data, use_labels=True, max_size=None, xflip=False)
 
