@@ -64,7 +64,6 @@ def setup_snapshot_image_grid(training_set, random_seed=0):
     return (gw, gh), np.stack(images), np.stack(labels)
 
 #----------------------------------------------------------------------------
-
 def save_image_grid(img, fname, drange, grid_size):
     lo, hi = drange
     img = np.asarray(img, dtype=np.float32)
@@ -73,16 +72,25 @@ def save_image_grid(img, fname, drange, grid_size):
 
     gw, gh = grid_size
     _N, C, H, W = img.shape
-    img = img.reshape(gh, gw, C, H, W)
+
+    if C not in [1, 3]: # Changed to handle channel size error
+        if C >= 3: # Use first 3 channels as RGB
+            img = img[:, :3]
+        else:
+            img = np.repeat(img[:, :1], 3, axis=1) # Use first channel as grayscale, replicate to RGB
+        C = img.shape[1]
+    
+    assert C in [1, 3]
+    
+    img = img.reshape([gh, gw, C, H, W])
     img = img.transpose(0, 3, 1, 4, 2)
-    img = img.reshape(gh * H, gw * W, C)
+    img = img.reshape([gh * H, gw * W, C])
 
     assert C in [1, 3]
     if C == 1:
         PIL.Image.fromarray(img[:, :, 0], 'L').save(fname)
     if C == 3:
         PIL.Image.fromarray(img, 'RGB').save(fname)
-
 #----------------------------------------------------------------------------
 
 def training_loop(
@@ -227,6 +235,7 @@ def training_loop(
     for phase in phases:
         phase.start_event = None
         phase.end_event = None
+        phase.recorded = False
         if rank == 0:
             phase.start_event = torch.cuda.Event(enable_timing=True)
             phase.end_event = torch.cuda.Event(enable_timing=True)
@@ -295,6 +304,7 @@ def training_loop(
                 continue
 
             # Initialize gradient accumulation.
+            phase.recorded = True
             if phase.start_event is not None:
                 phase.start_event.record(torch.cuda.current_stream(device))
             phase.opt.zero_grad(set_to_none=True)
@@ -432,9 +442,10 @@ def training_loop(
         # Collect statistics.
         for phase in phases:
             value = []
-            if (phase.start_event is not None) and (phase.end_event is not None):
+            if (phase.start_event is not None) and (phase.end_event is not None) and phase.recorded:
                 phase.end_event.synchronize()
                 value = phase.start_event.elapsed_time(phase.end_event)
+            phase.recorded = False
             training_stats.report0('Timing/' + phase.name, value)
         stats_collector.update()
         stats_dict = stats_collector.as_dict()
