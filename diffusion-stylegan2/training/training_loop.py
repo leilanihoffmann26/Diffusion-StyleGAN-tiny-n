@@ -227,6 +227,7 @@ def training_loop(
     for phase in phases:
         phase.start_event = None
         phase.end_event = None
+        phase.recorded = False
         if rank == 0:
             phase.start_event = torch.cuda.Event(enable_timing=True)
             phase.end_event = torch.cuda.Event(enable_timing=True)
@@ -295,6 +296,7 @@ def training_loop(
                 continue
 
             # Initialize gradient accumulation.
+            phase.recorded = True
             if phase.start_event is not None:
                 phase.start_event.record(torch.cuda.current_stream(device))
             phase.opt.zero_grad(set_to_none=True)
@@ -432,9 +434,10 @@ def training_loop(
         # Collect statistics.
         for phase in phases:
             value = []
-            if (phase.start_event is not None) and (phase.end_event is not None):
+            if (phase.start_event is not None) and (phase.end_event is not None) and phase.recorded:
                 phase.end_event.synchronize()
                 value = phase.start_event.elapsed_time(phase.end_event)
+                phase.recorded = False
             training_stats.report0('Timing/' + phase.name, value)
         stats_collector.update()
         stats_dict = stats_collector.as_dict()
