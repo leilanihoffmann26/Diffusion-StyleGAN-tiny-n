@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Training outputs
+diffusion-stylegan2/results/
+
+# CUDA toolkit installer
+cuda_13.2.0_595.45.04_linux.run
+
