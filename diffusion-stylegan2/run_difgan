@@ -1,0 +1,1 @@
+python3 train.py   --outdir=results/ST_3_PC   --data=/tmp/george_leilani   --gpus=1  --noise_sd=0.05 --target=0.6   --snap=1 
